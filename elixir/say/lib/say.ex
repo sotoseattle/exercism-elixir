@@ -2,6 +2,11 @@ defmodule Say do
   @doc """
   Translate a positive integer into English.
   """
+  def in_english(n)
+      when n < 0 or n > 999_999_999_999 do
+    {:error, "number is out of range"}
+  end
+
   def in_english(0), do: {:ok, "zero"}
 
   def in_english(number) do
