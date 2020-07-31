@@ -10,19 +10,26 @@ defmodule BeerSong do
     """
   end
 
-  def verse(n) do
+  def verse(1) do
     """
-    #{bottles(n)} of beer on the wall, #{bottles(n)} of beer.
-    Take #{one_it(n - 1)} down and pass it around, #{bottles(n - 1)} of beer on the wall.
+    1 bottle of beer on the wall, 1 bottle of beer.
+    Take it down and pass it around, no more bottles of beer on the wall.
     """
   end
 
-  defp bottles(0), do: "no more bottles"
-  defp bottles(1), do: "1 bottle"
-  defp bottles(n), do: "#{n} bottles"
+  def verse(2) do
+    """
+    2 bottles of beer on the wall, 2 bottles of beer.
+    Take one down and pass it around, 1 bottle of beer on the wall.
+    """
+  end
 
-  defp one_it(0), do: "it"
-  defp one_it(_), do: "one"
+  def verse(n) do
+    """
+    #{n} bottles of beer on the wall, #{n} bottles of beer.
+    Take one down and pass it around, #{n - 1} bottles of beer on the wall.
+    """
+  end
 
   @doc """
   Get the entire beer song for a given range of numbers of bottles.

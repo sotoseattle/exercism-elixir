@@ -10,12 +10,13 @@ defmodule Strain do
     filter(list, [], fun, true)
   end
 
-  def filter( [], acc, _fun, _keep ), do: Enum.reverse(acc)
-  def filter( [h | t], acc, fun, keep ) do
+  def filter([], acc, _fun, _keep), do: Enum.reverse(acc)
+
+  def filter([h | t], acc, fun, keep) do
     if fun.(h) == keep do
-      filter( t, [h | acc], fun, keep )
+      filter(t, [h | acc], fun, keep)
     else
-      filter( t, acc, fun, keep )
+      filter(t, acc, fun, keep)
     end
   end
 
@@ -27,7 +28,6 @@ defmodule Strain do
   """
   @spec discard(list :: list(any), fun :: (any -> boolean)) :: list(any)
   def discard(list, fun) do
-    filter(list, [], fun, false) 
+    filter(list, [], fun, false)
   end
-
 end

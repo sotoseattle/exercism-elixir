@@ -2,60 +2,53 @@ defmodule ProteinTranslation do
   @doc """
   Given an RNA string, return a list of proteins specified by codons, in order.
   """
-  @dicto %{ "UGU" => "Cysteine",
-             "UGC" => "Cysteine",
-             "UUA" => "Leucine",
-             "UUG" => "Leucine",
-             "AUG" => "Methionine",
-             "UUU" => "Phenylalanine",
-             "UUC" => "Phenylalanine",
-             "UCU" => "Serine",
-             "UCC" => "Serine",
-             "UCA" => "Serine",
-             "UCG" => "Serine",
-             "UGG" => "Tryptophan",
-             "UAU" => "Tyrosine",
-             "UAC" => "Tyrosine",
-             "UAA" => "STOP",
-             "UAG" => "STOP",
-             "UGA" => "STOP" }
 
-  @spec of_rna(String.t()) :: {atom, list(String.t())}
   def of_rna(rna) do
     rna
-    |> String.graphemes
+    |> break_into_codons
+    |> translate_to_proteins
+  end
+
+  defp break_into_codons(rna) do
+    rna
+    |> String.graphemes()
     |> Enum.chunk_every(3)
-    |> Enum.map( &Enum.join(&1) )    
-    |> Enum.map( &@dicto[&1] )
-    |> output(%{status: nil, acc: []})
+    |> Enum.map(&Enum.join(&1))
   end
 
-  def output([], %{status: status, acc: acc}) when status == :error do
-    {status, acc}
+  defp translate_to_proteins(list_of_codons) do
+    list_of_codons
+    |> Enum.map(&of_codon/1)
+    |> format([])
   end
 
-  def output([], %{status: status, acc: acc}) do
-    {status, Enum.reverse(acc)}
-  end
-
-  def output([h | t], %{ acc: acc}) do
-    case h  do
-      "STOP" -> output [], %{ acc: acc, status: :ok}
-      nil    -> output [], %{acc: "invalid RNA", status: :error}
-      _      -> output t,  %{acc: [h | acc], status: :ok}
-    end
-  end
+  defp format([], acc), do: {:ok, acc}
+  defp format([{:ok, "STOP"} | _], acc), do: {:ok, acc}
+  defp format([{:error, _} | _], _), do: {:error, "invalid RNA"}
+  defp format([{:ok, protein} | t], acc), do: format(t, acc ++ [protein])
 
   @doc """
   Given a codon, return the corresponding protein
   """
-  @spec of_codon(String.t()) :: {atom, String.t()}
-  def of_codon(codon) do
-    if String.length(codon) != 3 do
-      { :error, "invalid codon" }
-    else
-      { :ok, @dicto[codon] }
-    end
-  end
 
+  def of_codon(codon), do: protein_of(codon)
+
+  defp protein_of("UGU"), do: {:ok, "Cysteine"}
+  defp protein_of("UGC"), do: {:ok, "Cysteine"}
+  defp protein_of("UUA"), do: {:ok, "Leucine"}
+  defp protein_of("UUG"), do: {:ok, "Leucine"}
+  defp protein_of("AUG"), do: {:ok, "Methionine"}
+  defp protein_of("UUU"), do: {:ok, "Phenylalanine"}
+  defp protein_of("UUC"), do: {:ok, "Phenylalanine"}
+  defp protein_of("UCU"), do: {:ok, "Serine"}
+  defp protein_of("UCC"), do: {:ok, "Serine"}
+  defp protein_of("UCA"), do: {:ok, "Serine"}
+  defp protein_of("UCG"), do: {:ok, "Serine"}
+  defp protein_of("UGG"), do: {:ok, "Tryptophan"}
+  defp protein_of("UAU"), do: {:ok, "Tyrosine"}
+  defp protein_of("UAC"), do: {:ok, "Tyrosine"}
+  defp protein_of("UAA"), do: {:ok, "STOP"}
+  defp protein_of("UAG"), do: {:ok, "STOP"}
+  defp protein_of("UGA"), do: {:ok, "STOP"}
+  defp protein_of(_), do: {:error, "invalid codon"}
 end

@@ -4,52 +4,59 @@ defmodule RobotSimulator do
 
   Valid dirs are: `:north`, `:east`, `:south`, `:west`
   """
-  @ok_dirs [:north, :west, :east, :south]
-  @ok_movs ~r{[LRA]}
 
-  # defstruct [:dir, :pos]
+  defstruct dir: :north, pos: {0, 0}
 
-  def create(), do: %{dir: :north, pos: {0, 0}}
+  defguardp valid_position(pos)
+            when is_tuple(pos) and
+                   tuple_size(pos) == 2 and
+                   is_integer(elem(pos, 0)) and
+                   is_integer(elem(pos, 1))
 
-  def create(nil, nil), do: create()
+  defguardp valid_direction(dir) when dir in [:north, :west, :east, :south]
 
-  def create(dir, _pos) when dir not in @ok_dirs, do: {:error, "invalid direction"}
+  def create(), do: %RobotSimulator{}
 
-  def create(dir, {a, b}) when is_integer(a) and is_integer(b) do
-    %{dir: dir, pos: {a, b}}
-  end
+  def create(dir, _pos) when not valid_direction(dir),
+    do: {:error, "invalid direction"}
 
-  def create(_, _), do: {:error, "invalid position"}
+  def create(_dir, pos) when not valid_position(pos),
+    do: {:error, "invalid position"}
+
+  def create(dir, pos),
+    do: %RobotSimulator{dir: dir, pos: pos}
+
+  def simulate({:error, _} = o_o), do: o_o
 
   def simulate(robot, instructions) do
-    cond do
-      {:error} == robot ->
-        robot
-
-      String.replace(instructions, @ok_movs, "") != "" ->
-        {:error, "invalid instruction"}
-
-      true ->
-        instructions
-        |> String.graphemes()
-        |> Enum.reduce(robot, fn action, robot -> move(action, robot) end)
-    end
+    instructions
+    |> String.graphemes()
+    |> Enum.reduce(robot, fn action, robot -> move(action, robot) end)
   end
 
-  defp move("R", %{dir: :north} = robot), do: %{robot | dir: :east}
-  defp move("R", %{dir: :east} = robot), do: %{robot | dir: :south}
-  defp move("R", %{dir: :south} = robot), do: %{robot | dir: :west}
-  defp move("R", %{dir: :west} = robot), do: %{robot | dir: :north}
+  defp move("R", %RobotSimulator{dir: :north} = robot), do: turn(robot, :east)
+  defp move("R", %RobotSimulator{dir: :east} = robot), do: turn(robot, :south)
+  defp move("R", %RobotSimulator{dir: :south} = robot), do: turn(robot, :west)
+  defp move("R", %RobotSimulator{dir: :west} = robot), do: turn(robot, :north)
 
-  defp move("L", %{dir: :north} = robot), do: %{robot | dir: :west}
-  defp move("L", %{dir: :west} = robot), do: %{robot | dir: :south}
-  defp move("L", %{dir: :south} = robot), do: %{robot | dir: :east}
-  defp move("L", %{dir: :east} = robot), do: %{robot | dir: :north}
+  defp move("L", %RobotSimulator{dir: :north} = robot), do: turn(robot, :west)
+  defp move("L", %RobotSimulator{dir: :west} = robot), do: turn(robot, :south)
+  defp move("L", %RobotSimulator{dir: :south} = robot), do: turn(robot, :east)
+  defp move("L", %RobotSimulator{dir: :east} = robot), do: turn(robot, :north)
 
-  defp move("A", %{dir: :north, pos: {a, b}} = robot), do: %{robot | pos: {a, b + 1}}
-  defp move("A", %{dir: :west, pos: {a, b}} = robot), do: %{robot | pos: {a - 1, b}}
-  defp move("A", %{dir: :south, pos: {a, b}} = robot), do: %{robot | pos: {a, b - 1}}
-  defp move("A", %{dir: :east, pos: {a, b}} = robot), do: %{robot | pos: {a + 1, b}}
+  defp move("A", %RobotSimulator{dir: :north} = robot), do: advance(robot, {0, 1})
+  defp move("A", %RobotSimulator{dir: :west} = robot), do: advance(robot, {-1, 0})
+  defp move("A", %RobotSimulator{dir: :south} = robot), do: advance(robot, {0, -1})
+  defp move("A", %RobotSimulator{dir: :east} = robot), do: advance(robot, {+1, 0})
+
+  defp move(_, _), do: {:error, "invalid instruction"}
+
+  defp turn(robot, new_dir),
+    do: %RobotSimulator{robot | dir: new_dir}
+
+  defp advance(%RobotSimulator{pos: {x, y}} = robot, {add_x, add_y}) do
+    %RobotSimulator{robot | pos: {x + add_x, y + add_y}}
+  end
 
   def direction(robot), do: robot.dir
 

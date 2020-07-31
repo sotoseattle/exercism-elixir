@@ -1,62 +1,33 @@
 defmodule SecretHandshake do
-  @doc """
-  Determine the actions of a secret handshake based on the binary
-  representation of the given `code`.
-
-  If the following bits are set, include the corresponding action in your list
-  of commands, in order from lowest to highest.
-
-  1 = wink
-  10 = double blink
-  100 = close your eyes
-  1000 = jump
-
-  10000 = Reverse the order of the operations in the secret handshake
-  """
-
-  @dicto %{
-    1 => "wink",
-    10 => "double blink",
-    100 => "close your eyes",
-    1000 => "jump"}
-
-  @spec commands(code :: integer) :: list(String.t())
-
   def commands(code) do
     code
-    |> binafy_input
-    |> check_if_reversible
-    |> check(1_000)
-    |> apply_reversible
+    |> convert_to_binary
+    |> decompose_into_factors_of_10
+    |> reverse_if_10_000
+    |> translate
   end
 
-  def binafy_input code do
-    code
-    |> Integer.digits(2)
-    |> Enum.join
-    |> String.to_integer
+  def convert_to_binary(int) do
+    Integer.digits(int, 2)
   end
 
-  def check_if_reversible(x) do
-    %{ n: rem(x, 10_000),
-       reverse: div(x, 10_000) == 1,
-       sol: []}
+  def decompose_into_factors_of_10(bin_list) do
+    bin_list
+    |> Enum.reverse()
+    |> Enum.zip([1, 10, 100, 1000, 10_000])
+    |> Enum.map(fn {x, y} -> x * y end)
+    |> Enum.reject(&(&1 == 0))
+    |> Enum.reverse()
   end
 
-  def check(e, 0), do: e
+  def reverse_if_10_000([h | t]) when h == 10_000, do: t
 
-  def check( %{n: n, reverse: _r, sol: sol } = e, m) when div(n, m) == 1 do
-    check( %{ e | sol: [@dicto[m] | sol], n: rem(n, m) }, div(m, 10) )
-  end
+  def reverse_if_10_000(listo), do: Enum.reverse(listo)
 
-  def check(e, m), do: check( e, div(m, 10) )
+  def translate(bin_list), do: Enum.map(bin_list, &decode/1)
 
-  def apply_reversible( ,%{reverse: reverse, sol: sol} ) when reverse do
-    Enum.reverse(sol)
-  end
-
-  def apply_reversible(e), do: e[:sol]
-
+  def decode(1), do: "wink"
+  def decode(10), do: "double blink"
+  def decode(100), do: "close your eyes"
+  def decode(1000), do: "jump"
 end
-
-# IO.inspect SecretHandshake.commands(2)
