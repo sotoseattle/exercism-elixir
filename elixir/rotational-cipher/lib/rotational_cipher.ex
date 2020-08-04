@@ -6,19 +6,18 @@ defmodule RotationalCipher do
     |> List.to_string()
   end
 
-  defguardp is_lowcase(c) when c in ?a..?z
-  defguardp is_upcase(c) when c in ?A..?Z
-  defguardp lies_beyond_z?(c, n) when is_lowcase(c) and c + n > ?z
-  defguardp lies_beyond_Z?(c, n) when is_upcase(c) and c + n > ?Z
+  defp skid(char, n) when char in ?a..?z, do: stream(?a..?z, char, n)
 
-  defp skid(char, n) when lies_beyond_z?(char, n),
-    do: ?a - 1 + rem(char + n, ?z)
+  defp skid(char, n) when char in ?A..?Z, do: stream(?A..?Z, char, n)
 
-  defp skid(char, n) when lies_beyond_Z?(char, n),
-    do: ?A - 1 + rem(char + n, ?Z)
+  defp skid(char, _n), do: char
 
-  defp skid(char, n) when is_upcase(char) or is_lowcase(char),
-    do: char + n
+  defp stream(range, char, n) do
+    range
+    |> Stream.cycle()
+    |> Stream.drop(char + n - start_of(range))
+    |> Enum.take(1)
+  end
 
-  defp skid(char, _), do: char
+  defp start_of(range), do: range |> Enum.to_list() |> hd
 end
