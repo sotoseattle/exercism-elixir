@@ -8,19 +8,29 @@ defmodule ETL do
   %{"ability" => "a", "aardvark" => "a", "ballast" => "b", "beauty" =>"b"}
   """
   @spec transform(map) :: map
-  def transform(input) do
-    input |> Map.keys() |> magic(input)
+  def transform(raw_map) do
+    reverse_map(
+      %{},
+      Map.keys(raw_map),
+      raw_map
+    )
   end
 
-  defp magic(keys, mapo, acc \\ %{})
-  defp magic([], _, acc), do: acc
+  defp reverse_map(acc, [], _), do: acc
+  defp reverse_map(acc, [key | unprocessed_keys], raw_map) do
+    raw_map
+    |> reverse_map_by_key(key)
+    |> Map.merge(acc)
+    |> reverse_map(unprocessed_keys, raw_map)
+  end
 
-  defp magic([h | t], mapo, acc) do
-    addo =
-      mapo[h]
-      |> Enum.map(fn v -> {String.downcase(v), h} end)
+  defp reverse_map_by_key(input_map, key) do
+    input_map[key]
+      |> Enum.map(&reverse_tuple(&1, key))
       |> Map.new()
+  end
 
-    magic(t, mapo, Map.merge(acc, addo))
+  defp reverse_tuple(value, key) do
+    {String.downcase(value), key}
   end
 end

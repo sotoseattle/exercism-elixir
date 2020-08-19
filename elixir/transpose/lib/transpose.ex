@@ -18,11 +18,11 @@ defmodule Transpose do
 
   def transpose(input) do
     input
-    |> convert_into_list_of_lists
-    |> laundromat([])
+    |> convert_to_lists_of_chars
+    |> process([])
   end
 
-  defp convert_into_list_of_lists(input_string) do
+  defp convert_to_lists_of_chars(input_string) do
     input_string
     |> String.split("\n")
     |> expand_lines_to_max_length
@@ -36,16 +36,21 @@ defmodule Transpose do
   end
 
   defp max_line_length(lines) do
-    lines |> Enum.map(&String.length(&1)) |> Enum.max()
+    lines
+    |> Enum.map(&String.length/1)
+    |> Enum.max()
   end
 
-  defp laundromat([], output) do
-    output |> Enum.reverse() |> Enum.join("\n") |> String.trim_trailing()
+  defp process([], output) do
+    output
+    |> Enum.reverse()
+    |> Enum.join("\n")
+    |> String.trim_trailing()
   end
 
-  defp laundromat(list_of_lists, output) do
-    {heads, rest} = decapitate(list_of_lists, {[], []})
-    laundromat(rest, [Enum.join(heads) | output])
+  defp process(list_of_lists, output) do
+    {first_chars, rest} = decapitate(list_of_lists, {[], []})
+    process(rest, [Enum.join(first_chars) | output])
   end
 
   defp decapitate([], {heads, body}), do: {Enum.reverse(heads), Enum.reverse(body)}
