@@ -7,11 +7,11 @@ defmodule SecretHandshake do
     |> translate
   end
 
-  def convert_to_binary(int) do
+  defp convert_to_binary(int) do
     Integer.digits(int, 2)
   end
 
-  def decompose_into_factors_of_10(bin_list) do
+  defp decompose_into_factors_of_10(bin_list) do
     bin_list
     |> Enum.reverse()
     |> Enum.zip([1, 10, 100, 1000, 10_000])
@@ -20,14 +20,17 @@ defmodule SecretHandshake do
     |> Enum.reverse()
   end
 
-  def reverse_if_10_000([h | t]) when h == 10_000, do: t
+  defp reverse_if_10_000([10_000 | t]), do: Enum.reverse(t)
+  defp reverse_if_10_000(list), do: list
 
-  def reverse_if_10_000(listo), do: Enum.reverse(listo)
+  defp translate(bin_list) do
+    bin_list
+    |> Enum.map(&decode/1)
+    |> Enum.reverse()
+  end
 
-  def translate(bin_list), do: Enum.map(bin_list, &decode/1)
-
-  def decode(1), do: "wink"
-  def decode(10), do: "double blink"
-  def decode(100), do: "close your eyes"
-  def decode(1000), do: "jump"
+  defp decode(1), do: "wink"
+  defp decode(10), do: "double blink"
+  defp decode(100), do: "close your eyes"
+  defp decode(1000), do: "jump"
 end
