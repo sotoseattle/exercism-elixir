@@ -68,15 +68,15 @@ defmodule RailFenceCipher do
 
     decode_tape(%{
       input: mod_input,
-      tape: replace_char(token.tape, char, 0)})
+      tape: dec(token.tape, char, 0)})
   end
 
-  defp replace_char(char_list, char, number) do
+  defp dec(char_list, char, number) do
     i = Enum.find_index(char_list, &(&1 == number))
     if i do
       List.replace_at(char_list, i, char)
     else
-      replace_char(char_list, char, number+1)
+      dec(char_list, char, number+1)
     end
   end
 end
