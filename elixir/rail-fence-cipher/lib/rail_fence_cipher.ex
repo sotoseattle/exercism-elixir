@@ -1,83 +1,82 @@
 defmodule RailFenceCipher do
-  def encode(str, 1), do: str
-  def encode(str, tracks) do
-    str
-    |> recorder(tracks)
-    |> Enum.join()
-  end
-
-  defp recorder(string, tracks) do
-    positions_to_record = needle(string, tracks)
-
-    string
-    |> String.graphemes
-    |> Enum.zip(positions_to_record)
-    |> record(virgin_record(tracks))
-  end
-
-  defp needle(string, n_tracks) do
-    [(0..n_tracks-1), (n_tracks-2..1)]
-    |> Enum.map(&Enum.to_list/1)
-    |> List.flatten
-    |> Stream.cycle
-    |> Enum.take(String.length(string))
-  end
-
-  defp record([], list), do: list
-  defp record([{char, row} | t], list) do
-    list
-    |> List.update_at(row, &(&1 <> char))
-    |> (&record(t, &1)).()
-  end
-
-  defp virgin_record(n_tracks) do
-    " "
-    |> String.duplicate(n_tracks)
-    |> String.graphemes()
-    |> Enum.map(fn _ -> "" end)
+  def encode(string, 1), do: string
+  def encode(string, n_tracks) do
+    n_tracks
+    |> tokenize(string)
+    |> compute_sequencing
+    |> ready_virgin_tape(:enc)
+    |> encode_tape
+    |> format_output
   end
 
   def decode(string, 1), do: string
   def decode(string, n_tracks) do
-    positions_to_record = needle(string, n_tracks)
-
-    string
-    |> break_into_tracks(n_tracks)
-    |> reader(positions_to_record, "")
+    n_tracks
+    |> tokenize(string)
+    |> compute_sequencing
+    |> ready_virgin_tape(:dec)
+    |> decode_tape
+    |> format_output
   end
 
-  defp break_into_tracks(str, n) do
-    str
-    |> recorder(n)
-    |> Enum.map(&String.length/1)
-    |> slicer(str, [])
-    |> Enum.map(&String.graphemes/1)
+  defp tokenize(tracks, string) do
+    %{ input: String.graphemes(string),
+       tape: nil,
+       n_tracks: tracks,
+       track_order: nil}
   end
 
-  defp slicer([], _str, acc), do: Enum.reverse(acc)
-  defp slicer([h | t], str, acc) do
-    prefix = String.slice(str, h..-1)
-    suffix = String.slice(str, 0..h-1)
-    slicer(t, prefix, [suffix | acc])
+  defp ready_virgin_tape(token, :enc) do
+    %{token | tape: List.duplicate("", token.n_tracks)}
   end
 
-  defp reader(_recording, [], acc), do: acc
-  defp reader(recording, needle_list, acc) do
-    {track, mod_needle_list} = List.pop_at(needle_list, 0)
-    {char, mod_recording} = read(track, recording)
-
-    reader(
-      mod_recording,
-      mod_needle_list,
-      acc <> char
-    )
+  defp ready_virgin_tape(token, :dec) do
+    %{token | tape: token.track_order}
   end
 
-  defp read(track, recording) do
-    get_and_update_in(
-      recording,
-      [Access.at(track)],
-      fn x -> List.pop_at(x, 0) end
-      )
+  defp compute_sequencing(token) do
+    n = token.n_tracks
+    order = [(0..n-1), (n-2..1)]
+    |> Enum.map(&Enum.to_list/1)
+    |> List.flatten
+    |> Stream.cycle
+    |> Enum.take(length(token.input))
+
+    %{token | track_order: order}
+  end
+
+  defp encode_tape(token) do
+    rec(token, Enum.zip(token.input, token.track_order))
+  end
+
+  defp rec(token, []), do: token
+  defp rec(token, wip) do
+    {{char, track}, mod_wip} = List.pop_at(wip, 0)
+
+    mod_tape = update_in(token.tape, [Access.at(track)], &(&1<>char))
+
+    rec(%{token | tape: mod_tape}, mod_wip)
+  end
+
+  defp format_output(token) do
+    token.tape |> Enum.join
+  end
+
+  defp decode_tape(%{input: []} = token), do: token
+  defp decode_tape(token) do
+    {char,  mod_input} = List.pop_at(token.input, 0)
+
+    decode_tape(%{
+      input: mod_input,
+      tape: replace_char(token.tape, char, 0)})
+  end
+
+  defp replace_char(char_list, char, number) do
+    i = Enum.find_index(char_list, &(&1 == number))
+    if i do
+      List.replace_at(char_list, i, char)
+    else
+      replace_char(char_list, char, number+1)
+    end
   end
 end
